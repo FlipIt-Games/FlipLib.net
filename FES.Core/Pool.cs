@@ -1,28 +1,36 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace FES;
+
 
 public class Pool<TEntityType> 
     where TEntityType : struct 
 {
     private TEntityType[] datas;
-    public int Capacity { get; private set; }
-    public int Size { get; private set; }
+    private int capacity;
+    private int size;
+
+    public int Capacity => capacity; 
+    public int Size => size;
 
     private int currentEnumeratorIdx;
 
+    public unsafe ref TEntityType Current 
+    {
+        get 
+        {
+            return ref datas[currentEnumeratorIdx];
+        }
+    }
 
-    public TEntityType Current => datas[currentEnumeratorIdx];
-
-    private Pool() {}
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Pool(int capacity) 
     {
+        size = 0;
         datas = new TEntityType[capacity];
-        Size = 0;
-        this.Capacity = capacity;
+        this.capacity = capacity;
         currentEnumeratorIdx = -1;
     }
 
@@ -48,53 +56,52 @@ public class Pool<TEntityType>
             throw new IndexOutOfRangeException(nameof(id));
         }
 #endif
-        
         var data = datas[(int)id];
-        var swapWith = datas[Size -1];
+        var swapWith = datas[--size];
 
-        datas[Size -1] = swapWith;
+        datas[Size] = swapWith;
         datas[(int)id] = data;
 
-        if (currentEnumeratorIdx > 0) 
-        {
-            currentEnumeratorIdx -=1;
-        }
+        currentEnumeratorIdx--; 
+    }
 
-        Size -= 1;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void AddStatic(ref Pool<TEntityType> pool, TEntityType item) 
+    {
+#if DEBUG
+        if (pool.size == pool.capacity) 
+        {
+            throw new OutOfMemoryException();
+        }
+#endif
+
+        pool.datas[pool.size++] = item;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Add(TEntityType item) 
     {
 #if DEBUG
-        if (Size == Capacity) 
+        if (size == capacity) 
         {
             throw new OutOfMemoryException();
         }
 #endif
 
-        datas[Size] = item;
-        Size += 1;
+        datas[size++] = item;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Pool<TEntityType> GetEnumerator() 
     {
         currentEnumeratorIdx = -1;
         return this;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool MoveNext() 
     {
-        return ++currentEnumeratorIdx != Size;
-
-        // if (currentEnumeratorIdx >= Size) 
-        // {
-        //     return false;
-        // }
-
-        // current = datas[currentEnumeratorIdx];
-        // currentEnumeratorIdx +=1;
-        // return true;
+        return ++currentEnumeratorIdx != this.Size;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
