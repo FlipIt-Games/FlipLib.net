@@ -19,9 +19,4 @@ public readonly struct Id<T> where T : struct
 
     public override bool Equals([NotNullWhen(true)] object obj) => Value.Equals(obj);
     public override int GetHashCode() => Value.GetHashCode();
-
-    public void Test()
-    {
-        Console.WriteLine("Test");
-    }
 }
