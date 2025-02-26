@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace FES.Physics;
 
-public enum ColliderShape
+public enum CollisionShape
 {
     Circle = 1,
     Rectangle = 2,
@@ -13,7 +13,7 @@ public enum ColliderShape
 public struct Collider2D
 {
     [FieldOffset(0)]
-    public ColliderShape ShapeType;
+    public CollisionShape ShapeType;
 
     [FieldOffset(16)]
     public Circle Circle; 
