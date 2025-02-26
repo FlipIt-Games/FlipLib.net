@@ -2,8 +2,90 @@ using System.Numerics;
 
 namespace FES.Physics;
 
+using Shape = CollisionShape;
+
+public ref struct Collision
+{
+    public ref Collider2D Other;
+    public Vector2 Point;
+    public Vector2 Normal;
+    public float Depth;
+}
+
 public static class Physics2D
 {
+    public static bool GetNearestOverlapping(ReadOnlySpan<Collider2D> world, ref readonly Collider2D collider, ref Collider2D result)
+    {   
+        float? nearestDist = null;
+        float radiiSqrd; 
+        float distanceSqrd;
+
+        foreach(var other in world)
+        {
+            if ((other.ShapeType, collider.ShapeType) is (Shape.Circle, Shape.Circle))
+            {
+                radiiSqrd = other.Circle.Radius + collider.Circle.Radius; 
+                radiiSqrd *= radiiSqrd;
+                distanceSqrd = Vector2.DistanceSquared(other.Circle.Center, collider.Circle.Center);
+
+                if (distanceSqrd <= radiiSqrd && (!nearestDist.HasValue || nearestDist.Value < distanceSqrd))
+                {
+                    nearestDist = distanceSqrd;
+                    result = other;
+                }
+            }
+
+            throw new NotImplementedException();
+        }
+
+        return nearestDist.HasValue;
+    }
+
+    public static bool GetNearestOverlapping(ReadOnlySpan<Collider2D> world, ref readonly Collider2D collider, ref Collision result)
+    {
+        Collider2D? nearest = null;
+        float? nearestDist = null;
+
+        float radii = 0;
+        float radiiSqrd = 0; 
+        float distanceSqrd = 0;
+
+        foreach(var other in world)
+        {
+            if ((other.ShapeType, collider.ShapeType) is (Shape.Circle, Shape.Circle))
+            {
+                radii = other.Circle.Radius + collider.Circle.Radius; 
+                radiiSqrd = radii * radii;
+                distanceSqrd = Vector2.DistanceSquared(other.Circle.Center, collider.Circle.Center);
+
+                if (distanceSqrd <= radiiSqrd && (!nearestDist.HasValue || nearestDist.Value < distanceSqrd))
+                {
+                    nearestDist = distanceSqrd;
+                    nearest = other;
+                }
+            }
+        }
+
+        if (!nearest.HasValue) 
+        {
+            return false;
+        }
+
+        if ((nearest.Value.ShapeType, collider.ShapeType) is (Shape.Circle, Shape.Circle))
+        {
+            var distance = MathF.Sqrt(distanceSqrd);
+
+            result.Other = nearest.Value;
+            result.Depth = distance - radii;
+            result.Normal = Vector2.Normalize(collider.Circle.Center - nearest.Value.Circle.Center);
+            result.Point = nearest.Value.Circle.Center + (result.Normal * nearest.Value.Circle.Radius);
+
+            return true;
+        }
+
+        throw new NotImplementedException(); 
+    }
+
     public static Vector2? FindIntersection(LineSegment a, LineSegment b)
     {
         // var dYA = a.End.Y - a.Start.Y;
