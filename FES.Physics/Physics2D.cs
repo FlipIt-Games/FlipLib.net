@@ -104,7 +104,7 @@ public static class Physics2D
         throw new NotImplementedException(); 
     }
 
-    public static bool GetAllOverlapping(ReadOnlySpan<Entity<Collider2D>> world, ref readonly Collider2D collider, Span<Collision> collisions, Idx<Collider2D>? ignoreId = null) 
+    public static bool GetAllOverlapping(ReadOnlySpan<Entity<Collider2D>> world, ref readonly Collider2D collider, ref Span<Collision> collisions, Idx<Collider2D>? ignoreId = null) 
     {
         float radii = 0;
         float radiiSqrd = 0; 
@@ -129,6 +129,7 @@ public static class Physics2D
                 {
                     ref var collision = ref collisions[currentColIdx];
 
+                    collision.OtherId = new Idx<Collider2D>(i);
                     collision.Depth = radii - MathF.Sqrt(distanceSqrd);
                     collision.Normal = Vector2.Normalize(collider.Circle.Center - other.Circle.Center);
                     collision.Point = other.Circle.Center + (collision.Normal * other.Circle.Radius);
