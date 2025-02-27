@@ -116,5 +116,14 @@ public struct Pool<TEntityType>
     public void Clear() 
     {
         size = 0;
-    } 
+    }
+
+    /// <summary>
+    /// </summary>
+    /// <returns>Returns the underlying datas as span ranging from 0 to size</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Span<TEntityType> AsSpan()
+    {
+        return new Span<TEntityType>(datas, 0, size);
+    }
 }
