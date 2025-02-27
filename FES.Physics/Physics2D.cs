@@ -4,9 +4,9 @@ namespace FES.Physics;
 
 using Shape = CollisionShape;
 
-public ref struct Collision
+public struct Collision
 {
-    public Id<Collider2D> OtherId;
+    public Idx<Collider2D> OtherId;
     public Vector2 Point;
     public Vector2 Normal;
     public float Depth;
@@ -14,7 +14,7 @@ public ref struct Collision
 
 public static class Physics2D
 {
-    public static bool GetNearestOverlapping(ReadOnlySpan<Collider2D> world, ref readonly Collider2D collider, out Id<Collider2D> otherId)
+    public static bool GetNearestOverlapping(ReadOnlySpan<Entity<Collider2D>> world, ref readonly Collider2D collider, out Idx<Collider2D> otherId, Idx<Collider2D>? ignoreId = null)
     {   
         float? nearestDist = null;
         float radiiSqrd; 
@@ -24,7 +24,11 @@ public static class Physics2D
 
         for (int i = 0; i < world.Length; i++)
         {
-            var other = world[i];
+            if (ignoreId.HasValue && ignoreId.Value == (Idx<Collider2D>)i)  { continue; }
+
+            ref readonly var otherEntity = ref world[i];
+            ref readonly var other = ref otherEntity.Item;
+
             if ((other.ShapeType, collider.ShapeType) is (Shape.Circle, Shape.Circle))
             {
                 radiiSqrd = other.Circle.Radius + collider.Circle.Radius; 
@@ -34,8 +38,10 @@ public static class Physics2D
                 if (distanceSqrd <= radiiSqrd && (!nearestDist.HasValue || nearestDist.Value < distanceSqrd))
                 {
                     nearestDist = distanceSqrd;
-                    otherId = new Id<Collider2D>(i);
+                    otherId = new Idx<Collider2D>(i);
                 }
+
+                continue;
             }
 
             throw new NotImplementedException();
@@ -44,7 +50,7 @@ public static class Physics2D
         return nearestDist.HasValue;
     }
    
-    public static bool GetNearestOverlapping(ReadOnlySpan<Collider2D> world, ref readonly Collider2D collider, ref Collision collision)
+    public static bool GetNearestOverlapping(ReadOnlySpan<Entity<Collider2D>> world, ref readonly Collider2D collider, ref Collision collision, Idx<Collider2D>? ignoreId = null)
     {
         Collider2D? nearest = null;
         float? nearestDist = null;
@@ -55,7 +61,11 @@ public static class Physics2D
 
         for (int i = 0; i < world.Length; i++)
         {
-            var other = world[i];
+            if (ignoreId.HasValue && ignoreId.Value == (Idx<Collider2D>)i)  { continue; }
+
+            ref readonly var otherEntity = ref world[i];
+            ref readonly var other = ref otherEntity.Item;
+            
             if ((other.ShapeType, collider.ShapeType) is (Shape.Circle, Shape.Circle))
             {
                 radii = other.Circle.Radius + collider.Circle.Radius; 
@@ -66,9 +76,13 @@ public static class Physics2D
                 {
                     nearestDist = distanceSqrd;
                     nearest = other;
-                    collision.OtherId = new Id<Collider2D>(i);
+                    collision.OtherId = new Idx<Collider2D>(i);
                 }
+
+                continue;
             }
+
+            throw new NotImplementedException();
         }
 
         if (!nearest.HasValue) 
@@ -80,7 +94,7 @@ public static class Physics2D
         {
             var distance = MathF.Sqrt(distanceSqrd);
 
-            collision.Depth = distance - radii;
+            collision.Depth = radii - distance;
             collision.Normal = Vector2.Normalize(collider.Circle.Center - nearest.Value.Circle.Center);
             collision.Point = nearest.Value.Circle.Center + (collision.Normal * nearest.Value.Circle.Radius);
 
@@ -88,6 +102,48 @@ public static class Physics2D
         }
 
         throw new NotImplementedException(); 
+    }
+
+    public static bool GetAllOverlapping(ReadOnlySpan<Entity<Collider2D>> world, ref readonly Collider2D collider, Span<Collision> collisions, Idx<Collider2D>? ignoreId = null) 
+    {
+        float radii = 0;
+        float radiiSqrd = 0; 
+        float distanceSqrd = 0;
+
+        var currentColIdx = 0;
+
+        for (int i = 0; i < world.Length; i++)
+        {
+            if (ignoreId.HasValue && ignoreId.Value == (Idx<Collider2D>)i)  { continue; }
+
+            ref readonly var otherEntity = ref world[i];
+            ref readonly var other = ref world[i].Item;
+
+            if ((other.ShapeType, collider.ShapeType) is (Shape.Circle, Shape.Circle))
+            {
+                radii = other.Circle.Radius + collider.Circle.Radius; 
+                radiiSqrd = radii * radii;
+                distanceSqrd = Vector2.DistanceSquared(other.Circle.Center, collider.Circle.Center);
+
+                if (distanceSqrd <= radiiSqrd)
+                {
+                    ref var collision = ref collisions[currentColIdx];
+
+                    collision.Depth = radii - MathF.Sqrt(distanceSqrd);
+                    collision.Normal = Vector2.Normalize(collider.Circle.Center - other.Circle.Center);
+                    collision.Point = other.Circle.Center + (collision.Normal * other.Circle.Radius);
+
+                    currentColIdx++;
+                }
+
+                continue;
+            }
+
+            throw new NotImplementedException();
+        }
+
+        collisions = collisions.Slice(0, currentColIdx);
+        return currentColIdx > 0;
     }
 
     public static Vector2? FindIntersection(LineSegment a, LineSegment b)

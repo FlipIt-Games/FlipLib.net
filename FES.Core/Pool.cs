@@ -6,11 +6,11 @@ namespace FES;
 /// A non resizable, contiguous and pre-allocated block of memory that allows for quick iteration, insertion and deletion.
 /// Elements are unordered.
 /// </summary>
-/// <typeparam name="TEntityType"></typeparam>
-public struct Pool<TEntityType> 
-    where TEntityType : struct 
+/// <typeparam name="TEntity"></typeparam>
+public struct Pool<TEntity> 
+    where TEntity : struct 
 {
-    private TEntityType[] datas;
+    private Entity<TEntity>[] datas;
     private int capacity;
     private int size;
 
@@ -24,11 +24,13 @@ public struct Pool<TEntityType>
     /// </summary>
     public int Size => size;
 
+    private int nextUId;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Pool(int capacity) 
     {
         size = 0;
-        datas = new TEntityType[capacity];
+        datas = new Entity<TEntity>[capacity];
         this.capacity = capacity;
     }
 
@@ -37,7 +39,7 @@ public struct Pool<TEntityType>
     /// </summary>
     /// <param name="idx"></param>
     /// <returns>The element at idx idx</returns>
-    public ref TEntityType this[Id<TEntityType> idx]
+    public ref Entity<TEntity> this[Idx<TEntity> idx]
     {
         get 
         {
@@ -57,7 +59,7 @@ public struct Pool<TEntityType>
     /// </summary>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ref TEntityType Add() 
+    public ref Entity<TEntity> Add() 
     {
 #if DEBUG
         if (size == capacity) 
@@ -65,7 +67,9 @@ public struct Pool<TEntityType>
             throw new OutOfMemoryException();
         }
 #endif
-        return ref datas[size++];
+        ref var data = ref datas[size++];
+        data.Id = new UId<TEntity>(nextUId++);
+        return ref data;
     }
 
     /// <summary>
@@ -74,7 +78,7 @@ public struct Pool<TEntityType>
     /// <param name="item"></param>
     /// <returns>A ref to the inserted element.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ref TEntityType Add(TEntityType item) 
+    public ref Entity<TEntity> Add(TEntity item) 
     {
 #if DEBUG
         if (size == capacity) 
@@ -83,7 +87,12 @@ public struct Pool<TEntityType>
         }
 #endif
 
-        datas[size++] = item;
+        datas[size++] = new Entity<TEntity> 
+        { 
+            Id = new UId<TEntity>(nextUId++),
+            Item = item 
+        };
+
         return ref datas[size -1];
     }
 
@@ -94,7 +103,7 @@ public struct Pool<TEntityType>
     /// </summary>
     /// <param name="id"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Remove(Id<TEntityType> id)
+    public void Remove(Idx<TEntity> id)
     {
 #if DEBUG
         if ((int)id >= Size) 
@@ -122,8 +131,8 @@ public struct Pool<TEntityType>
     /// </summary>
     /// <returns>Returns the underlying datas as span ranging from 0 to size</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Span<TEntityType> AsSpan()
+    public Span<Entity<TEntity>> AsSpan()
     {
-        return new Span<TEntityType>(datas, 0, size);
+        return new Span<Entity<TEntity>>(datas, 0, size);
     }
 }
