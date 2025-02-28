@@ -12,6 +12,19 @@ public struct Circle
     public float Radius;
 }
 
+[StructLayout(LayoutKind.Explicit, Size = 32)]
+public struct Cone
+{
+    [FieldOffset(0)]
+    public Vector2 Base;
+
+    [FieldOffset(8)]
+    public Vector2 Tip;
+
+    [FieldOffset(16)]
+    public float Angle;
+}
+
 [StructLayout(LayoutKind.Explicit, Size = 16)]
 public struct Rectangle
 {

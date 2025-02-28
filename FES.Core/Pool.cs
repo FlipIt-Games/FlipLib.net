@@ -131,7 +131,7 @@ public struct Pool<TEntity>
     /// </summary>
     /// <returns>Returns the underlying datas as span ranging from 0 to size</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Span<Entity<TEntity>> AsSpan()
+    public ReadOnlySpan<Entity<TEntity>> AsSpan()
     {
         return new Span<Entity<TEntity>>(datas, 0, size);
     }

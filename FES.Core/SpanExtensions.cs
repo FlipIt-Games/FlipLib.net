@@ -2,7 +2,7 @@ namespace FES;
 
 public static class SpanExtensions
 {
-    public static void Insert<T>(Span<T> span, T elem, int idx) 
+    public static void Insert<T>(this Span<T> span, T elem, int idx) 
     {
         for (int i = span.Length -2; i > idx; i--)   
         {
