@@ -19,9 +19,7 @@ public static class Overlap
     {
         Collider2D? nearest = null;
         float? nearestDistSqrd = null;
-
         float radii = 0;
-        float distanceSqrd = 0;
 
         Vector2 closestPointOnRect = Vector2.Zero;
 
@@ -29,6 +27,7 @@ public static class Overlap
         {
             if (self == (Idx<Collider2D>)i)  { continue; }
 
+            float distanceSqrd = 0;
             ref readonly var other = ref world[i].Item;
             if (other.ShapeType is Shape.Circle)
             {
@@ -51,20 +50,20 @@ public static class Overlap
                 var halfWidth = other.Rectangle.Width / 2;                                
                 var halfHeight = other.Rectangle.Height / 2;                                
 
-                closestPointOnRect =  new Vector2(
+                var closestPointOnRectTmp =  new Vector2(
                     Math.Clamp(circle.Center.X, rect.Center.X - halfWidth, rect.Center.X + halfWidth),
                     Math.Clamp(circle.Center.Y, rect.Center.Y - halfHeight, rect.Center.Y + halfHeight)
                 );
 
-                distanceSqrd = Vector2.DistanceSquared(circle.Center, closestPointOnRect);
+                distanceSqrd = Vector2.DistanceSquared(circle.Center, closestPointOnRectTmp);
 
                 if (distanceSqrd > circle.Radius * circle.Radius) { continue; }
 
                 collision.OtherId = new Idx<Collider2D>(i);
 
+                closestPointOnRect = closestPointOnRectTmp;
                 nearestDistSqrd = distanceSqrd;
                 nearest = other;
-                collision.OtherId = new Idx<Collider2D>(i);
 
                 continue;
             }
@@ -83,7 +82,7 @@ public static class Overlap
                 collision.Point = nearest.Value.Circle.Center + (collision.Normal * nearest.Value.Circle.Radius);     
                 return true;
             case Shape.Rectangle:
-                distance = MathF.Sqrt(distanceSqrd);
+                distance = MathF.Sqrt(nearestDistSqrd.Value);
                 collision.Depth = circle.Radius - distance;
                 collision.Normal = (circle.Center - closestPointOnRect) / distance;
                 collision.Point = circle.Center + (-collision.Normal * (circle.Radius - collision.Depth));
