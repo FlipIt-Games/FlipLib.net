@@ -57,29 +57,23 @@ public static class Physics2D
 
     public static Vector2? FindIntersection(LineSegment a, LineSegment b)
     {
-        var dYA = a.End.Y - a.Start.Y;
-        var dXA = a.Start.X - a.End.X;
-        var cA = dYA * a.Start.X + dXA * a.Start.Y;
+        Vector2 p1 = a.Start;
+        Vector2 p2 = a.End;
+        Vector2 p3 = b.Start;
+        Vector2 p4 = b.End;
 
-        var dYB = b.End.Y - b.Start.Y;
-        var dXB = b.Start.X - b.End.X;
-        var cB = dYA * b.Start.X + dXA * b.Start.Y;
+        float denom = (p4.Y - p3.Y) * (p2.X - p1.X) - (p4.X - p3.X) * (p2.Y - p1.Y);
 
-        var det = dYA * dXB - dYB * dXA;
+        if (denom == 0) { return null; }
 
-        if (det == 0) { return null; }
+        float ua = ((p4.X - p3.X) * (p1.Y - p3.Y) - (p4.Y - p3.Y) * (p1.X - p3.X)) / denom;
+        float ub = ((p2.X - p1.X) * (p1.Y - p3.Y) - (p2.Y - p1.Y) * (p1.X - p3.X)) / denom;
 
-        var intersection = new Vector2(
-            (dXB * cA - dXA * cB) / det,
-            (dYA * cB - dXA * cA) / det
-        );
-        
-        if (InSegmentRange(a, intersection) && InSegmentRange(b, intersection))
-        {
-            return intersection;
-        }
+        if (ua < 0 || ua > 1 || ub < 0 || ub > 1) { return null; }
 
-        return null;
+        float x = p1.X + ua * (p2.X - p1.X);
+        float y = p1.Y + ua * (p2.Y - p1.Y);
+        return new Vector2(x, y);
     }
 
     public static bool Overlaps(Rectangle rect, Vector2 p)

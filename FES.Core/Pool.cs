@@ -53,6 +53,17 @@ public struct Pool<TEntity>
         }
     }
 
+    public TEntity? GetByUId(UId<TEntity> uid)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            ref var item = ref datas[i];
+            if (item.Id == uid) { return item.Item; }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Returns a ref to the first available element and increments the size of the pool. 
     /// Datas are not reinitialized and might contains the values of the previous object. 

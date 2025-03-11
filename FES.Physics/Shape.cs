@@ -34,6 +34,17 @@ public struct Rectangle
     public float Width;
     [FieldOffset(12)]
     public float Height;
+
+    public void GetCorners(Span<Vector2> corners)
+    {   
+        var halfWidth = Width / 2;
+        var halfHeight = Height / 2;
+
+        corners[0] = Center + new Vector2(-halfWidth, halfHeight);  // Top Left
+        corners[1] = Center + new Vector2(halfWidth, halfHeight);   // Top Right
+        corners[2] = Center + new Vector2(halfWidth, -halfHeight);  // Bottom Left
+        corners[3] = Center + new Vector2(-halfWidth, -halfHeight); // Bottom Right
+    }
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 16)]
