@@ -45,6 +45,30 @@ public struct Rectangle
         corners[2] = Center + new Vector2(halfWidth, -halfHeight);  // Bottom Left
         corners[3] = Center + new Vector2(-halfWidth, -halfHeight); // Bottom Right
     }
+
+    public Vector2 GetClosestEdgeNormal(Vector2 point)
+    {
+        var halfWidth = Width / 2;
+        var halfHeight = Height / 2;
+
+        var left = Center.X - halfWidth;
+        var right = Center.X + halfWidth;
+        var bottom = Center.Y - halfHeight;
+        var top = Center.Y + halfHeight;
+
+        var leftDistance = Math.Abs(point.X - left);
+        var rightDistance = Math.Abs(point.X - right);
+        var bottomDistance = Math.Abs(point.Y - bottom);
+        var topDistance = Math.Abs(point.Y - top);
+
+        var minDistance = Math.Min(Math.Min(leftDistance, rightDistance), Math.Min(bottomDistance, topDistance));
+
+        if (minDistance == leftDistance) { return new Vector2(-1, 0); }
+        if (minDistance == rightDistance) { return new Vector2(1, 0); }
+        if (minDistance == bottomDistance) { return new Vector2(0, -1); }
+
+        return new Vector2(0, 1);
+    }
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -81,6 +105,15 @@ public struct Ray
 {
     [FieldOffset(0)]
     public Vector2 Origin;
+    [FieldOffset(8)]
+    public Vector2 Direction;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 16)]
+public struct Line
+{
+    [FieldOffset(0)]
+    public Vector2 Point;
     [FieldOffset(8)]
     public Vector2 Direction;
 }

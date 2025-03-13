@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
+using System.ComponentModel.Design;
 
 namespace FES.AI;
 
@@ -51,24 +52,7 @@ public struct Path
         => LastIdx.HasValue ? _nodes[LastIdx.Value.Value] : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Idx<PathNode> PushFront(Vector2 position)
-    {
-        var idx = Add(new PathNode { Position = position });
-        if (!FirstIdx.HasValue)
-        {
-            FirstIdx = LastIdx = idx;
-            return idx;
-        }
-
-        ref var node = ref this[idx];
-        node.Next = FirstIdx;
-        FirstIdx = idx;
-
-        return idx;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Idx<PathNode> PushBack(Vector2 position)
+    public Idx<PathNode> Push(Vector2 position)
     {
         var idx = Add(new PathNode { Position = position });
         if (!LastIdx.HasValue)
@@ -78,6 +62,24 @@ public struct Path
         }
 
         ref var last = ref this[LastIdx.Value];
+#if DEBUG
+        if (last.Position == position)
+        {
+            Console.WriteLine("WARNING: Trying to push the same position to the path");
+            var node = GetFirst()!.Value;
+            var count = 1;
+            Console.WriteLine("Printing path");
+            while(true)
+            {
+                Console.WriteLine($"{count}: {node.Position}");
+                count++;
+                if (node.Next.HasValue) { node = this[node.Next.Value]; }
+                else { break; }
+            }
+            Console.WriteLine("Printing path end");
+        }
+#endif
+
         last.Next = idx;
         LastIdx = idx;
         return idx;

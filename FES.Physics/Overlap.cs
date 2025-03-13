@@ -267,6 +267,32 @@ public static partial class Overlap
         }
     }
 
+    public static (Vector2?, Vector2?) Line(Rectangle rect, Line line) 
+    {
+        Span<Vector2> corners = stackalloc Vector2[4];
+        rect.GetCorners(corners);
+
+        (Vector2?, Vector2?) result = (null, null);
+        for (int i = 0; i < 4; i++)
+        {
+            var intersection = Physics2D.FindIntersection(line, new LineSegment
+            {
+                Start = corners[i],
+                End = corners[(i + 1) % 4]
+            });
+
+            if (intersection is null) { continue; }
+            if (result.Item1.HasValue)
+            {
+                result.Item2 = intersection;
+                return result;
+            }
+            result.Item1 = intersection;
+        }
+
+        return result;
+    }
+
     public static (Vector2?, Vector2?) Circle(LineSegment segment, Circle circle)
     {
         var segmentDelta = segment.End - segment.Start;

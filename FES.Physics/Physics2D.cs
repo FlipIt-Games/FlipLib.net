@@ -57,22 +57,43 @@ public static class Physics2D
 
     public static Vector2? FindIntersection(LineSegment a, LineSegment b)
     {
-        Vector2 p1 = a.Start;
-        Vector2 p2 = a.End;
-        Vector2 p3 = b.Start;
-        Vector2 p4 = b.End;
+        var p1 = a.Start;
+        var p2 = a.End;
+        var p3 = b.Start;
+        var p4 = b.End;
 
-        float denom = (p4.Y - p3.Y) * (p2.X - p1.X) - (p4.X - p3.X) * (p2.Y - p1.Y);
+        var denom = (p4.Y - p3.Y) * (p2.X - p1.X) - (p4.X - p3.X) * (p2.Y - p1.Y);
 
         if (denom == 0) { return null; }
 
-        float ua = ((p4.X - p3.X) * (p1.Y - p3.Y) - (p4.Y - p3.Y) * (p1.X - p3.X)) / denom;
-        float ub = ((p2.X - p1.X) * (p1.Y - p3.Y) - (p2.Y - p1.Y) * (p1.X - p3.X)) / denom;
+        var ua = ((p4.X - p3.X) * (p1.Y - p3.Y) - (p4.Y - p3.Y) * (p1.X - p3.X)) / denom;
+        var ub = ((p2.X - p1.X) * (p1.Y - p3.Y) - (p2.Y - p1.Y) * (p1.X - p3.X)) / denom;
 
         if (ua < 0 || ua > 1 || ub < 0 || ub > 1) { return null; }
 
-        float x = p1.X + ua * (p2.X - p1.X);
-        float y = p1.Y + ua * (p2.Y - p1.Y);
+        var x = p1.X + ua * (p2.X - p1.X);
+        var y = p1.Y + ua * (p2.Y - p1.Y);
+        return new Vector2(x, y);
+    }
+
+    public static Vector2? FindIntersection(Line l, LineSegment s)
+    {
+        var p1 = l.Point;
+        var p2 = l.Point + l.Direction;
+        var p3 = s.Start;
+        var p4 = s.End;
+
+        var denom = (p4.Y - p3.Y) * (p2.X - p1.X) - (p4.X - p3.X) * (p2.Y - p1.Y);
+
+        if (denom == 0) { return null; }
+
+        var t = ((p1.X - p3.X) * (p3.Y - p4.Y) - (p1.Y - p3.Y) * (p3.X - p4.X)) / denom;
+        var u = -((p1.X - p2.X) * (p1.Y - p3.Y) - (p1.Y - p2.Y) * (p1.X - p3.X)) / denom;
+
+        if (u < 0 || u > 1) { return null; }
+
+        var x = p1.X + t * (p2.X - p1.X);
+        var y = p1.Y + t * (p2.Y - p1.Y);
         return new Vector2(x, y);
     }
 
