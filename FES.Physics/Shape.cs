@@ -10,6 +10,25 @@ public struct Circle
     public Vector2 Center;
     [FieldOffset(8)]
     public float Radius;
+
+    public Rectangle GetOuterSquare()
+        => new Rectangle 
+        {
+            Center = Center,
+            Width = Radius,
+            Height = Radius
+        };
+
+    public Rectangle GetInnerSquare()
+    {
+        var size = MathF.Sqrt(Radius * Radius * 0.5f);
+        return new Rectangle 
+        {
+            Center = Center,
+            Width = size,
+            Height = size,
+        };
+    }
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -25,6 +44,22 @@ public struct Cone
     public float Angle;
 }
 
+public enum RectangleEdge 
+{ 
+    Top,
+    Bottom,
+    Left,
+    Right
+}
+
+public enum RectangleCorner
+{
+    TopLeft,
+    TopRight,
+    BottomRight,
+    BottomLeft
+}
+
 [StructLayout(LayoutKind.Explicit, Size = 16)]
 public struct Rectangle
 {
@@ -36,7 +71,7 @@ public struct Rectangle
     public float Height;
 
     public void GetCorners(Span<Vector2> corners)
-    {   
+    {
         var halfWidth = Width / 2;
         var halfHeight = Height / 2;
 
@@ -44,6 +79,26 @@ public struct Rectangle
         corners[1] = Center + new Vector2(halfWidth, halfHeight);   // Top Right
         corners[2] = Center + new Vector2(halfWidth, -halfHeight);  // Bottom Left
         corners[3] = Center + new Vector2(-halfWidth, -halfHeight); // Bottom Right
+    }
+
+    public Vector2 GetCornerPosition(RectangleCorner corner)
+    {
+        var halfWidth = Width / 2;
+        var halfHeight = Height / 2;
+
+        return corner switch
+        {
+            RectangleCorner.TopLeft => Center + new Vector2(-halfWidth, halfHeight),
+            RectangleCorner.TopRight => Center + new Vector2(halfWidth, halfHeight),
+            RectangleCorner.BottomLeft => Center + new Vector2(halfWidth, -halfHeight),
+            RectangleCorner.BottomRight => Center + new Vector2(-halfWidth, -halfHeight),
+            _ => throw new InvalidOperationException()
+        };
+    }
+
+    public RectangleCorner GetClosestCorner(Vector2 point)
+    {
+        throw new NotImplementedException();
     }
 
     public Vector2 GetClosestEdgeNormal(Vector2 point)
@@ -68,6 +123,19 @@ public struct Rectangle
         if (minDistance == bottomDistance) { return new Vector2(0, -1); }
 
         return new Vector2(0, 1);
+    }
+
+    public RectangleEdge GetClosestRectangleEdge(Vector2 point)
+    {
+        var normal = GetClosestEdgeNormal(point);
+        return (normal.X, normal.Y) switch
+        {
+            (0, 1) => RectangleEdge.Top,
+            (0, -1) => RectangleEdge.Bottom,
+            (1, 0) => RectangleEdge.Right,
+            (-1, 0) => RectangleEdge.Left,
+            _ => throw new InvalidOperationException($"normal: {normal} is not an edge normal")
+        };
     }
 }
 

@@ -85,6 +85,22 @@ public struct Path
         return idx;
     }
 
+    public Idx<PathNode> PushFront(Vector2 position)
+    {
+        var idx = Add(new PathNode { Position = position});
+        if (!FirstIdx.HasValue)
+        {
+            FirstIdx = LastIdx = idx; 
+            return idx;
+        }
+
+        ref var first = ref this[idx];
+        first.Next = FirstIdx.Value; 
+        FirstIdx = idx;
+
+        return idx; 
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RemoveFirst()
     {

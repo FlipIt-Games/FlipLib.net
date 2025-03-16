@@ -6,7 +6,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FES.Core", "FES.Core\FES.Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FES.Physics", "FES.Physics\FES.Physics.csproj", "{40BECF17-08A1-410B-A9B2-D7214DE0AE48}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FES.Physics.Tests", "FES.Physics.Tests\FES.Physics.Tests.csproj", "{8E772F41-8AD6-4EA1-941F-53C61B551B1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FES.Physics.Tests", "FES.Physics.Tests\FES.Physics.Tests.csproj", "{8E772F41-8AD6-4EA1-941F-53C61B551B1F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FES.AI", "FES.AI\FES.AI.csproj", "{A44BBB23-4DF3-4A36-A3BF-2EA62EFF446B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +28,10 @@ Global
 		{8E772F41-8AD6-4EA1-941F-53C61B551B1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E772F41-8AD6-4EA1-941F-53C61B551B1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E772F41-8AD6-4EA1-941F-53C61B551B1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A44BBB23-4DF3-4A36-A3BF-2EA62EFF446B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A44BBB23-4DF3-4A36-A3BF-2EA62EFF446B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A44BBB23-4DF3-4A36-A3BF-2EA62EFF446B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A44BBB23-4DF3-4A36-A3BF-2EA62EFF446B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
