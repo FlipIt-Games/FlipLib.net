@@ -34,7 +34,7 @@ public struct MinHeap<T> where T : struct
         => (Idx<MinHeapNode<T>>)((2 * idx.Value) + 2);
 
     public Idx<MinHeapNode<T>> GetParentIdx(Idx<MinHeapNode<T>> idx)
-        => (Idx<MinHeapNode<T>>)((idx.Value -1) * 0.5f);
+        => (Idx<MinHeapNode<T>>)((idx.Value -1) / 2);
 
     public void Insert(Idx<T> dataIdx, int value) 
     {
@@ -54,14 +54,17 @@ public struct MinHeap<T> where T : struct
     // Refactor to not be O(n)
     public void Update(Idx<T> dataIdx, int newValue)
     {
-        int i;
-        for (i = 0; i < _data.Length; i++)
+        int i = 0;
+        while(i < Size)
         {
             if (_data[i].DataIdx == dataIdx) 
             {
                 break;
             }
+            i++;
         }
+
+        if (i == Size) { throw new ArgumentException($"data: {dataIdx.Value} is not in the heap"); };
 
         var idx = (Idx<MinHeapNode<T>>)i;
         var item = this[idx];
@@ -71,9 +74,21 @@ public struct MinHeap<T> where T : struct
         else { BubbleDown(idx); }
     }
 
-    public void RemoveFirst()
+    public Idx<T> RemoveFirst()
     {
-        throw new NotImplementedException();
+        var first = _data[0];
+        _data[0] = _data[--Size];
+        BubbleDown((Idx<MinHeapNode<T>>)0);
+        return first.DataIdx;
+    }
+
+    public void Clear()
+    {
+        for (int i = 0; i < Size; i++)
+        {
+            _data[i] = new();
+        }
+        Size = 0;
     }
 
     private void BubbleUp(Idx<MinHeapNode<T>> idx)
@@ -106,7 +121,7 @@ public struct MinHeap<T> where T : struct
 
             if (rightChildIdx.Value < Size)
             {
-                var rightChild = this[currentIdx];
+                var rightChild = this[rightChildIdx];
                 if (rightChild.Value < leftChild.Value)
                 {
                     swapIndex = rightChildIdx;
@@ -121,6 +136,8 @@ public struct MinHeap<T> where T : struct
             this[swapIndex] = current;
 
             currentIdx = swapIndex;
+            leftChildIdx = GetLeftChildIdx(currentIdx);
+            rightChildIdx = GetRightChildIdx(currentIdx);
         }
     }
 }

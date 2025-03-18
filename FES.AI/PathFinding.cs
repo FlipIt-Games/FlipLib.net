@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Numerics;
 
 using FES.Physics;
@@ -38,13 +37,18 @@ public struct GridCoord
         => (Column, Row).GetHashCode();
 }
 
-public struct AStarNode 
+public struct PathFindingNode 
 {
-    public GridCoord Coordinates;
-    public GridCoord ParentCoordinates;
+    public enum NodeState
+    {
+        Unvisited,
+        Open,
+        Closed,
+        NearestWalkableVisited,
+    }
 
-    public bool Closed;
-    public bool Open;
+    public Idx<PathFindingNode> ParentIdx;
+    public NodeState State;
 
     public int GValue;
     public int HValue;
@@ -52,7 +56,7 @@ public struct AStarNode
     public int FValue => GValue + HValue;
 }
 
-public struct NavGrid
+public struct NavigationGrid
 {
     public const int DiagonalDistance = 14;
     public const int OrthogonalDistance = 10;
@@ -70,11 +74,11 @@ public struct NavGrid
 
     public bool[,] _unwalkablesCells;
 
-    public AStarNode[,] _nodes;
-    public MinHeap<AStarNode> _openList;
-    public HashSet<Idx<AStarNode>> _closedList;
+    public PathFindingNode[,] _nodes;
+    public MinHeap<PathFindingNode> _openList;
+    public GridCoord[] _nearestWalkableQueue;
 
-    public NavGrid(float cellSize, int columns, int rows)
+    public NavigationGrid(float cellSize, int columns, int rows)
     {
         CellSize = cellSize;
         InverseCellSize = 1 / cellSize;
@@ -86,14 +90,118 @@ public struct NavGrid
 
         // assumes the grid is centered at world (0;0)
         World0ToGrid = new((int)(columns * cellSize), (int)(rows * cellSize));
-        Grid0ToWorld = new(-columns * cellSize * 0.5f, rows * cellSize * 0.5f);
+        Grid0ToWorld = new Vector2(-columns * cellSize * 0.5f, rows * cellSize * 0.5f) + new Vector2(cellSize * 0.5f, -cellSize * 0.5f);
 
         _unwalkablesCells = new bool[columns, rows];
 
-        _nodes = new AStarNode[columns, rows];
-
+        _nodes = new PathFindingNode[columns, rows];
         _openList = new(_unwalkablesCells.Length);
-        _closedList = new(_unwalkablesCells.Length);
+        _nearestWalkableQueue = new GridCoord[columns * rows];
+    }
+
+    public void FindPath(Vector2 origin, Vector2 destination, ref Path path)
+    {
+        // Clear everything
+        path.Clear();
+        _openList.Clear();
+
+        // TODO: this is bad, we should ideally find a way to not have to clear the nodes between calls
+        for (int col = 0; col < _nodes.GetLength(0); col++)
+        {
+            for (int row = 0; row < _nodes.GetLength(1); row++)
+            {
+                _nodes[col, row] = new() { State = PathFindingNode.NodeState.Unvisited };
+            }
+        }
+
+        // Set destination cell and correct it if it is overlapping with an unwalkable cell
+        var startCell = ToGridCoordinates(origin);
+        var endCell = ToGridCoordinates(destination);
+
+        if (_unwalkablesCells[endCell.Column, endCell.Row])
+        {
+            endCell = FindNearestWalkableCell(endCell); 
+        }
+
+        ref var startNode = ref _nodes[startCell.Column, startCell.Row];
+        startNode.State = PathFindingNode.NodeState.Open;
+
+        var startNodeIdx = ToIdx(startCell);
+        _openList.Insert(startNodeIdx, 0);
+
+        Span<GridCoord> neighbours = stackalloc GridCoord[8];
+
+        while(_openList.Size > 0)
+        {
+            var currentIdx = _openList.RemoveFirst();
+            var currentCell = ToGridCoord(currentIdx);
+            ref var current = ref _nodes[currentCell.Column, currentCell.Row];
+
+            if (currentCell == endCell) 
+            {
+                while(currentCell != startCell)
+                {
+                    path.PushFront(ToWorldPosition(currentCell));
+
+                    currentCell = ToGridCoord(current.ParentIdx);
+                    current = _nodes[currentCell.Column, currentCell.Row];
+                }
+
+                return;
+            }
+
+            if (currentCell != startCell && current.ParentIdx != startNodeIdx)
+            {
+                var parentCell = ToGridCoord(current.ParentIdx);
+                var parent = _nodes[parentCell.Column, parentCell.Row];
+                var grandParentCell = ToGridCoord(parent.ParentIdx);
+
+                if (HasLineOfSight(parentCell, grandParentCell))
+                {
+                    var grandParent = _nodes[grandParentCell.Column, grandParentCell.Row];
+                    current.ParentIdx = parent.ParentIdx;
+                    current.GValue = grandParent.GValue + GetDistance(grandParentCell, currentCell);
+                }
+            }
+
+            current.State = PathFindingNode.NodeState.Closed;
+
+            var neighboursCount = GetNeighbours(neighbours, currentCell);
+            for (int i = 0; i < neighboursCount; i++)
+            {
+                var neighbourCell = neighbours[i];
+                if (_unwalkablesCells[neighbourCell.Column, neighbourCell.Row]) { continue; }
+
+                var neighbour = _nodes[neighbourCell.Column, neighbourCell.Row];
+                if (neighbour.State == PathFindingNode.NodeState.Closed) 
+                { 
+                    continue; 
+                }
+
+                int cost = current.GValue + GetDistance(neighbourCell, currentCell);
+                if (neighbour.State == PathFindingNode.NodeState.Open && cost >= neighbour.GValue) 
+                {
+                   continue; 
+                }
+
+                neighbour.GValue = cost;
+                neighbour.HValue = GetDistance(neighbourCell, endCell);
+                neighbour.ParentIdx = currentIdx;
+
+                var idx = ToIdx(neighbourCell);
+                if (neighbour.State == PathFindingNode.NodeState.Open)
+                {
+                    _openList.Update(idx, neighbour.FValue);
+                }
+                else 
+                {
+                    _openList.Insert(idx, neighbour.FValue);
+                    neighbour.State = PathFindingNode.NodeState.Open;
+                }
+
+                _nodes[neighbourCell.Column, neighbourCell.Row] = neighbour;
+            }
+        }
     }
 
     public void SetUnwalkable(ReadOnlySpan<Entity<Collider2D>> world, bool unwalkable)
@@ -155,12 +263,22 @@ public struct NavGrid
         _unwalkablesCells[row, column] = unwalkable;
     }
 
+    /// <summary>
+    /// Returns the coordinate of the cell containing the provided world position Vector 
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns>The coordinate of the cell containing the provided world position Vector </returns>
     public GridCoord ToGridCoordinates(Vector2 position)
     {
         var scaled = new Vector2(position.X * InverseCellSize, -position.Y * InverseCellSize);
         return new(World0ToGrid.Column + (int)MathF.Floor(scaled.X), World0ToGrid.Row + (int)MathF.Floor(scaled.Y));
     }
 
+    /// <summary>
+    /// Returns The center of the cell as world position
+    /// </summary>
+    /// <param name="coordinates"></param>
+    /// <returns>The center of the cell as world position</returns>
     public Vector2 ToWorldPosition(GridCoord coordinates)
     {
         return Grid0ToWorld + new Vector2(coordinates.Column * CellSize, -coordinates.Row * CellSize);
@@ -191,87 +309,12 @@ public struct NavGrid
            coordinate.Row >= 0 && 
            coordinate.Row < _unwalkablesCells.GetLength(1); 
 
-    public void FindPath(Vector2 origin, Vector2 destination, ref Path path)
-    {
-        path.Clear();
 
-        var startCell = ToGridCoordinates(origin);
-        var endCell = ToGridCoordinates(destination);
-
-        ref var startNode = ref _nodes[startCell.Column, startCell.Row];
-
-        Span<GridCoord> neighbours = stackalloc GridCoord[8];
-
-        var iter = 0;
-        while(_openList.Size > 0)
-        {
-            var currentIdx = _openList.RemoveFirst().DataIdx;
-            ref var current = ref _nodes[currentIdx.Value / _nodes.GetLength(0), currentIdx.Value % _nodes.GetLength(1)];
-
-            if (current.Coordinates == endCell) 
-            {
-                ref var node = ref current;
-                path.PushFront(ToWorldPosition(endCell));
-                while(current.Coordinates != startCell)
-                {
-                    path.PushFront(ToWorldPosition(current.Coordinates));
-                    current = ref _nodes[current.ParentCoordinates.Column, current.ParentCoordinates.Row];
-                }
-
-                return;
-            }
-
-            if (iter++ >= 2)
-            {
-                ref readonly var parent = ref _nodes[current.ParentCoordinates.Column, current.ParentCoordinates.Row];
-                ref readonly var grandParent = ref _nodes[parent.ParentCoordinates.Column, current.ParentCoordinates.Row];
-
-                if (HasLineOfSight(grandParent.Coordinates, current.Coordinates)) 
-                {
-                    current.ParentCoordinates = grandParent.Coordinates;
-                    current.GValue = grandParent.GValue + GetDistance(grandParent.Coordinates, current.Coordinates);
-                }
-            }
-            
-            current.Closed = true;
-
-            var neighboursCount = GetNeighbours(neighbours, current.Coordinates);
-            for (int i = 0; i < neighboursCount; i++)
-            {
-                var cell = neighbours[i];
-                if (_unwalkablesCells[cell.Column, cell.Row]) { continue; }
-
-                ref var neighbour = ref _nodes[cell.Column, cell.Row];
-                if (neighbour.Closed) { continue; }
-
-                int cost = current.GValue + GetDistance(cell, current.Coordinates);
-                if (neighbour.Open && cost >= neighbour.GValue) 
-                {
-                   continue; 
-                }
-
-                neighbour.GValue = cost;
-                neighbour.HValue = GetDistance(cell, endCell);
-                neighbour.ParentCoordinates = current.Coordinates;
-
-                var idx = new Idx<AStarNode>((_nodes.GetLength(1) * cell.Column) + cell.Row);
-                if (neighbour.Open)
-                {
-                    _openList.Update(idx, neighbour.FValue);
-                }
-                else 
-                {
-                    _openList.Insert(idx, neighbour.FValue);
-                    neighbour.Open = true;
-                }
-            }
-        }
-    }
 
     public int GetDistance(GridCoord a, GridCoord b)
     {
-        var dx = b.Column - a.Column; 
-        var dy = b.Row - a.Row;
+        var dx = (int)MathF.Abs(b.Column - a.Column); 
+        var dy = (int)MathF.Abs(b.Row - a.Row);
         
         return dx < dy 
             ? dx * DiagonalDistance + ((dy - dx) * OrthogonalDistance)
@@ -311,5 +354,52 @@ public struct NavGrid
                 y0 += sy;
             }
         }
+    }
+
+    public GridCoord ToGridCoord(Idx<PathFindingNode> idx)
+    {
+        var rowCount = _nodes.GetLength(1);
+        return new GridCoord(idx.Value / rowCount, idx.Value % rowCount);
+    }
+
+    public Idx<PathFindingNode> ToIdx(GridCoord coordinates)
+    {
+        return (Idx<PathFindingNode>)(coordinates.Column * _nodes.GetLength(1) + coordinates.Row);
+    }
+
+    public GridCoord FindNearestWalkableCell(GridCoord destination)
+    {
+        var queueStart = 0;  
+        var queueEnd = 0;  
+
+        _nearestWalkableQueue[queueEnd++] = destination;
+        _nodes[destination.Column, destination.Row].State = PathFindingNode.NodeState.NearestWalkableVisited;
+
+        Span<(int X, int Y)> directions = stackalloc (int X, int Y)[]
+        { 
+            (-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1) 
+        };
+
+        while(queueStart < queueEnd)
+        {
+            var current = _nearestWalkableQueue[queueStart++];
+            foreach(var (x, y) in directions)
+            {
+                var neighbour = current + new GridCoord(x, y);
+                if (_nodes[neighbour.Column, neighbour.Row].State == PathFindingNode.NodeState.NearestWalkableVisited ||
+                    neighbour.Column < 0 || neighbour.Column >= _unwalkablesCells.GetLength(0) ||
+                    neighbour.Row < 0 || neighbour.Row >= _unwalkablesCells.GetLength(1))
+                {
+                    continue;
+                }
+
+                if (!_unwalkablesCells[neighbour.Column, neighbour.Row]) { return neighbour; }
+
+                _nearestWalkableQueue[queueEnd++] = neighbour;
+                _nodes[neighbour.Column, neighbour.Row].State = PathFindingNode.NodeState.NearestWalkableVisited;
+            }
+        }
+
+        return destination;
     }
 }
