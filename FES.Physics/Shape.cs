@@ -15,8 +15,8 @@ public struct Circle
         => new Rectangle 
         {
             Center = Center,
-            Width = Radius,
-            Height = Radius
+            Width = Radius * 2,
+            Height = Radius * 2
         };
 
     public Rectangle GetInnerSquare()

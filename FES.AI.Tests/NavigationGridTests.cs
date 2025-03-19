@@ -76,13 +76,14 @@ public class NavigationGridTests
                 Height = 1
             }
         }, 
+        1,
         true);
 
         for (int col = 0; col < 10; col++)
         {
             for (int row = 0; row < 10; row++)
             {
-                var expected = expectedGrid[col, row] == 0 ? false : true;
+                var expected = expectedGrid[col, row];
                 Assert.That(grid._unwalkablesCells[col, row], Is.EqualTo(expected), $"expected grid at {col}, {row} to be {expected}");
             }
         }
