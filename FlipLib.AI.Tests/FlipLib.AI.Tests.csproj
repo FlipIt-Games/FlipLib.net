@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FES.AI\FES.AI.csproj" />
-    <ProjectReference Include="..\FES.Physics\FES.Physics.csproj" />
+    <ProjectReference Include="..\FlipLib.AI\FlipLib.AI.csproj" />
+    <ProjectReference Include="..\FlipLib.Physics\FlipLib.Physics.csproj" />
   </ItemGroup>
 
   <ItemGroup>

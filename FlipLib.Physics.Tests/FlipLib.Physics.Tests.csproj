@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FES.Physics\FES.Physics.csproj" />
+    <ProjectReference Include="..\FlipLib.Physics\FlipLib.Physics.csproj" />
   </ItemGroup>
 
   <ItemGroup>
