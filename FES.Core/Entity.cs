@@ -22,7 +22,7 @@ public readonly struct Idx<T> where T : struct
     public static bool operator ==(Idx<T> id, Idx<T>other) => id.Value == other.Value;
     public static bool operator !=(Idx<T> id, Idx<T>other) => id.Value != other.Value;
 
-    public override bool Equals([NotNullWhen(true)] object obj) => Value.Equals(obj);
+    public override bool Equals(object obj) => Value.Equals(obj);
     public override int GetHashCode() => Value.GetHashCode();
 }
 
@@ -40,6 +40,6 @@ public readonly struct UId<T> where T : struct
     public static bool operator ==(UId<T> id, UId<T>other) => id.Value == other.Value;
     public static bool operator !=(UId<T> id, UId<T>other) => id.Value != other.Value;
 
-    public override bool Equals([NotNullWhen(true)] object obj) => Value.Equals(obj);
+    public override bool Equals(object obj) => Value.Equals(obj);
     public override int GetHashCode() => Value.GetHashCode();
 }

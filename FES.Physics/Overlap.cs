@@ -1,6 +1,4 @@
-using FES;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace FES.Physics;
 
@@ -261,7 +259,7 @@ public static partial class Overlap
                 var rect = nearest.Rectangle;
                 collision.Point = closestIntersectionPoint.Value;
                 collision.Depth = Vector2.Distance(closestIntersectionPoint.Value, segment.End);
-                collision.Normal = Vector2.Round(Vector2.Normalize(rect.Center - collision.Point));
+                collision.Normal = Vector2.Normalize(rect.Center - collision.Point).Round();
                 return true;
             default: throw new NotImplementedException();
         }
@@ -365,7 +363,7 @@ public static partial class Overlap
     {
         var segmentDelta = segment.End - segment.Start;
         var t = Vector2.Dot(from - segment.Start, segmentDelta) / segmentDelta.LengthSquared();
-        t = float.Clamp(t, 0, 1);
+        t = Math.Clamp(t, 0, 1);
 
         return segment.Start + (segmentDelta * t);
     }

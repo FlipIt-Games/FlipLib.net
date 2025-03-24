@@ -242,8 +242,8 @@ public struct NavigationGrid
         {
             for (int row = startRow; row <= endRow; row++)
             {
-                var c = int.Clamp(col, 0, _unwalkablesCells.GetLength(0) - 1);
-                var r = int.Clamp(row, 0, _unwalkablesCells.GetLength(1) - 1);
+                var c = Math.Clamp(col, 0, _unwalkablesCells.GetLength(0) - 1);
+                var r = Math.Clamp(row, 0, _unwalkablesCells.GetLength(1) - 1);
                 var current = _unwalkablesCells[c, r];
                 _unwalkablesCells[c, r] = (byte)(value ? current | mask : current ^ mask);
             }
