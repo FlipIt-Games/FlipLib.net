@@ -1,7 +1,7 @@
 **A simple and fast collection of video game libraries targeting .net standard 2.1.**
 
-[!NOTE]
-This repository is in a really early stage and is far from being production ready. Breaking changes in the API are expected to come. So use at your own risk.
+> [!WARNING]
+> This repository is in a really early stage and is far from being production ready. Breaking changes in the API are expected to come. So use at your own risk.
 
 ## Overview
 This is not an engine, nor a rendering library. This is merely a set of tools and data structures to help you implement your game logic that canbe easily integrated in any tech stack as long as it supports .Net Standard 2.1. 
