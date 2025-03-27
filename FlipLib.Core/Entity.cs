@@ -1,13 +1,12 @@
-using System.Diagnostics.CodeAnalysis;
+namespace FlipLib;
 
-namespace FES;
-public struct Entity<T> where T : struct
+public struct Entity<T> where T : unmanaged
 {
     public UId<T> Id;
     public T Item;
 }
 
-public readonly struct Idx<T> where T : struct 
+public readonly struct Idx<T> where T : unmanaged 
 {
     public readonly int Value;
 
@@ -26,7 +25,7 @@ public readonly struct Idx<T> where T : struct
     public override int GetHashCode() => Value.GetHashCode();
 }
 
-public readonly struct UId<T> where T : struct
+public readonly struct UId<T> where T : unmanaged
 {
     public readonly int Value;
 

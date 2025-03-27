@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Numerics;
+﻿using System.Numerics;
+
+using FlipLib;
+using FlipLib.Physics;
 
 namespace FES.Physics.Tests;
 
@@ -45,7 +47,7 @@ public class Physics2DTests
     [TestCaseSource(nameof(OverlapsLineSegmentPointSource))]
     public void Overlaps_LineSegment_Point(LineSegment s, Vector2 p, bool expected)
     {
-        var actual = Physics2D.Overlaps(s, p);
+        var actual = Overlap.LineSegment(s, p);
         Assert.AreEqual(expected, actual);
     }
 }

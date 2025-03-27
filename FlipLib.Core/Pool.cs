@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace FES;
+namespace FlipLib;
 
 /// <summary>
 /// A non resizable, contiguous and pre-allocated block of memory that allows for quick iteration, insertion and deletion.
@@ -8,7 +8,7 @@ namespace FES;
 /// </summary>
 /// <typeparam name="TEntity"></typeparam>
 public struct Pool<TEntity> 
-    where TEntity : struct 
+    where TEntity : unmanaged 
 {
     private Entity<TEntity>[] datas;
     private int capacity;

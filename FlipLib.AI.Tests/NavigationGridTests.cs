@@ -1,7 +1,7 @@
 using System.Numerics;
-using FES.Physics;
+using FlipLib.Physics;
 
-namespace FES.AI.Tests;
+namespace FlipLib.AI.Tests;
 
 [TestFixture]
 public class NavigationGridTests
@@ -12,15 +12,15 @@ public class NavigationGridTests
     {
         get
         {
-            yield return new TestCaseData(new GridCoord(0, 0), new Vector2(-4.75f, 4.75f));
-            yield return new TestCaseData(new GridCoord(19, 19), new Vector2(4.75f, -4.75f));
-            yield return new TestCaseData(new GridCoord(10, 10), new Vector2(0.25f, -0.25f));
-            yield return new TestCaseData(new GridCoord(3, 14), new Vector2(-3.25f, -2.25f));
+            yield return new TestCaseData(new GridCoordinate(0, 0), new Vector2(-4.75f, 4.75f));
+            yield return new TestCaseData(new GridCoordinate(19, 19), new Vector2(4.75f, -4.75f));
+            yield return new TestCaseData(new GridCoordinate(10, 10), new Vector2(0.25f, -0.25f));
+            yield return new TestCaseData(new GridCoordinate(3, 14), new Vector2(-3.25f, -2.25f));
         }
     }
 
     [Test, TestCaseSource(nameof(ToWorldPositionTestCases))]
-    public void ToWorldPosition_ShouldReturnCenterOfGridCell(GridCoord input, Vector2 expected)
+    public void ToWorldPosition_ShouldReturnCenterOfGridCell(GridCoordinate input, Vector2 expected)
     {
         var actual = testGrid.ToWorldPosition(input);
         Assert.That(actual.X, Is.EqualTo(expected.X).Within(0.00001f));
@@ -31,17 +31,17 @@ public class NavigationGridTests
     {
         get
         {
-            yield return new TestCaseData(new Vector2(-5, 5f), new GridCoord(0, 0));
-            yield return new TestCaseData(new Vector2(-4.7f, 4.8f), new GridCoord(0, 0));
-            yield return new TestCaseData(new Vector2(4.7f, -4.7f), new GridCoord(19, 19));
-            yield return new TestCaseData(new Vector2(4.999f, -4.999f), new GridCoord(19, 19));
-            yield return new TestCaseData(new Vector2(0, 0), new GridCoord(10, 10));
-            yield return new TestCaseData(new Vector2(-3.13f, -2.34f), new GridCoord(3, 14));
+            yield return new TestCaseData(new Vector2(-5, 5f), new GridCoordinate(0, 0));
+            yield return new TestCaseData(new Vector2(-4.7f, 4.8f), new GridCoordinate(0, 0));
+            yield return new TestCaseData(new Vector2(4.7f, -4.7f), new GridCoordinate(19, 19));
+            yield return new TestCaseData(new Vector2(4.999f, -4.999f), new GridCoordinate(19, 19));
+            yield return new TestCaseData(new Vector2(0, 0), new GridCoordinate(10, 10));
+            yield return new TestCaseData(new Vector2(-3.13f, -2.34f), new GridCoordinate(3, 14));
         }
     }
 
     [Test, TestCaseSource(nameof(ToGridCoordinatesTestCases))]
-    public void ToGridCoordinates(Vector2 input, GridCoord expected)
+    public void ToGridCoordinates(Vector2 input, GridCoordinate expected)
     {
         var actual = testGrid.ToGridCoordinates(input);
         Assert.That(actual, Is.EqualTo(expected));
@@ -68,12 +68,12 @@ public class NavigationGridTests
 
         grid.SetUnwalkable(new Collider2D
         {
-            ShapeType = CollisionShape.Rectangle,
-            Rectangle = new Rectangle 
+            ShapeType = CollisionShape.AABB,
+            AABB = new Rectangle 
             { 
                 Center = new Vector2(0, 0),
-                Width = 1, 
-                Height = 1
+                HalfWidth = 0.5f, 
+                HalfHeight = 0.5f
             }
         }, 
         1,

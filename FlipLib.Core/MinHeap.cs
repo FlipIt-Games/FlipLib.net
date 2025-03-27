@@ -1,12 +1,12 @@
-namespace FES;
+namespace FlipLib;
 
-public struct MinHeapNode<T> where T : struct
+public struct MinHeapNode<T> where T : unmanaged
 {
     public int Value;
     public Idx<T> DataIdx;
 }
 
-public struct MinHeap<T> where T : struct
+public struct MinHeap<T> where T : unmanaged
 {
     public readonly int Capacity;
     public int Size;

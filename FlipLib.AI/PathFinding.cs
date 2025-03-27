@@ -1,15 +1,15 @@
 using System.Numerics;
 
-using FES.Physics;
+using FlipLib.Physics;
 
-namespace FES.AI;
+namespace FlipLib.AI;
 
-public struct GridCoord
+public struct GridCoordinate
 {
     public int Column;
     public int Row;
 
-    public GridCoord(int column, int row)
+    public GridCoordinate(int column, int row)
     {
         Column = column;
         Row = row;
@@ -18,20 +18,20 @@ public struct GridCoord
     public override string ToString()
         => $"(Column: {Column}, Row: {Row})";
 
-    public static GridCoord operator +(GridCoord a, GridCoord b)
-        => new GridCoord(a.Column + b.Column, a.Row + b.Row);
+    public static GridCoordinate operator +(GridCoordinate a, GridCoordinate b)
+        => new GridCoordinate(a.Column + b.Column, a.Row + b.Row);
 
-    public static GridCoord operator -(GridCoord a, GridCoord b)
-        => new GridCoord(a.Column - b.Column, a.Row - b.Row);
+    public static GridCoordinate operator -(GridCoordinate a, GridCoordinate b)
+        => new GridCoordinate(a.Column - b.Column, a.Row - b.Row);
 
-    public static bool operator ==(GridCoord a, GridCoord b) 
+    public static bool operator ==(GridCoordinate a, GridCoordinate b) 
         => a.Column == b.Column && a.Row == b.Row;
 
-    public static bool operator !=(GridCoord a, GridCoord b) 
+    public static bool operator !=(GridCoordinate a, GridCoordinate b) 
         => a.Column != b.Column || a.Row != b.Row;
 
     public override bool Equals(object? obj)
-        => obj is GridCoord coord && coord == this;
+        => obj is GridCoordinate coord && coord == this;
 
     public override int GetHashCode()
         => (Column, Row).GetHashCode();
@@ -70,13 +70,13 @@ public struct NavigationGrid
     public readonly int RowCount;
 
     public readonly Vector2 Grid0ToWorld;
-    public readonly GridCoord World0ToGrid;
+    public readonly GridCoordinate World0ToGrid;
 
     public byte[,] _unwalkablesCells;
 
     public PathFindingNode[,] _nodes;
     public MinHeap<PathFindingNode> _openList;
-    public GridCoord[] _nearestWalkableQueue;
+    public GridCoordinate[] _nearestWalkableQueue;
 
     public NavigationGrid(float cellSize, int columns, int rows)
     {
@@ -96,16 +96,24 @@ public struct NavigationGrid
 
         _nodes = new PathFindingNode[columns, rows];
         _openList = new(_unwalkablesCells.Length);
-        _nearestWalkableQueue = new GridCoord[columns * rows];
+        _nearestWalkableQueue = new GridCoordinate[columns * rows];
     }
 
+    /// <summary>
+    /// Find the nearest path from origin to destination and writes it down the path argument 
+    /// while checking for obstacles that belongs to the provided mask
+    /// </summary>
+    /// <param name="origin">The start position</param>
+    /// <param name="destination">The position to reach</param>
+    /// <param name="path">The buffer the path will be written in</param>
+    /// <param name="mask">The layers to consider while checking for obstacles</param>
     public void FindPath(Vector2 origin, Vector2 destination, ref Path path, byte mask)
     {
         // Clear everything
         path.Clear();
         _openList.Clear();
 
-        // TODO: this is bad, we should ideally find a way to not have to clear the nodes between calls
+        // TODO: this is really bad, we should ideally find a way to not have to clear the nodes between calls
         for (int col = 0; col < _nodes.GetLength(0); col++)
         {
             for (int row = 0; row < _nodes.GetLength(1); row++)
@@ -129,7 +137,7 @@ public struct NavigationGrid
         var startNodeIdx = ToIdx(startCell);
         _openList.Insert(startNodeIdx, 0);
 
-        Span<GridCoord> neighbours = stackalloc GridCoord[8];
+        Span<GridCoordinate> neighbours = stackalloc GridCoordinate[8];
 
         while(_openList.Size > 0)
         {
@@ -137,6 +145,7 @@ public struct NavigationGrid
             var currentCell = ToGridCoord(currentIdx);
             ref var current = ref _nodes[currentCell.Column, currentCell.Row];
 
+            // If we reached the destination we can build the path by walking parents
             if (currentCell == endCell) 
             {
                 while(currentCell != startCell)
@@ -146,12 +155,11 @@ public struct NavigationGrid
                     currentCell = ToGridCoord(current.ParentIdx);
                     current = _nodes[currentCell.Column, currentCell.Row];
                 }
-
-                // if (path.IsEmpty()) { throw new InvalidOperationException("Path is empty"); }
-
                 return;
             }
 
+            // Performs Line of Sight check to remove redundant nodes, this allows for "any angle" path creation
+            // instead of grid constrained path
             if (currentCell != startCell && current.ParentIdx != startNodeIdx)
             {
                 var parentCell = ToGridCoord(current.ParentIdx);
@@ -204,8 +212,6 @@ public struct NavigationGrid
                 _nodes[neighbourCell.Column, neighbourCell.Row] = neighbour;
             }
         }
-
-        // throw new InvalidOperationException("Counld not find path to target");
     }
 
     public void SetUnwalkable(ReadOnlySpan<Entity<Collider2D>> world, byte mask, bool value)
@@ -220,23 +226,23 @@ public struct NavigationGrid
     {
         var rect = collider.ShapeType switch
         {
-            CollisionShape.Rectangle => collider.Rectangle,
+            CollisionShape.AABB => collider.AABB,
             CollisionShape.Circle => collider.Circle.GetOuterSquare(),
             _ => throw new NotImplementedException()
         };
 
         rect = rect with
         {
-            Width = rect.Width + (CellSize * 2),
-            Height = rect.Height + (CellSize * 2)
+            HalfWidth = rect.HalfWidth + CellSize,
+            HalfHeight = rect.HalfHeight + CellSize
         };
 
         var firstCell = ToGridCoordinates(rect.GetCornerPosition(RectangleCorner.TopLeft));
         var startCol = firstCell.Column;
         var startRow = firstCell.Row;
 
-        var endCol = startCol + (int)MathF.Ceiling((rect.Width * InverseCellSize)) -1;
-        var endRow = startRow + (int)MathF.Ceiling((rect.Height * InverseCellSize)) -1;
+        var endCol = startCol + (int)MathF.Ceiling((rect.HalfWidth * 2 * InverseCellSize)) -1;
+        var endRow = startRow + (int)MathF.Ceiling((rect.HalfHeight * 2 * InverseCellSize)) -1;
 
         for (int col = startCol; col <= endCol; col++)
         {
@@ -250,7 +256,7 @@ public struct NavigationGrid
         }
     }
 
-    public void SetUnwalkable(GridCoord coordinates, byte mask, bool value)
+    public void SetUnwalkable(GridCoordinate coordinates, byte mask, bool value)
     {
         var column = coordinates.Column;
         var row = coordinates.Row;
@@ -275,7 +281,7 @@ public struct NavigationGrid
     /// </summary>
     /// <param name="position"></param>
     /// <returns>The coordinate of the cell containing the provided world position Vector </returns>
-    public GridCoord ToGridCoordinates(Vector2 position)
+    public GridCoordinate ToGridCoordinates(Vector2 position)
     {
         var scaled = new Vector2(position.X * InverseCellSize, -position.Y * InverseCellSize);
         return new(World0ToGrid.Column + (int)MathF.Floor(scaled.X), World0ToGrid.Row + (int)MathF.Floor(scaled.Y));
@@ -286,12 +292,12 @@ public struct NavigationGrid
     /// </summary>
     /// <param name="coordinates"></param>
     /// <returns>The center of the cell as world position</returns>
-    public Vector2 ToWorldPosition(GridCoord coordinates)
+    public Vector2 ToWorldPosition(GridCoordinate coordinates)
     {
         return Grid0ToWorld + new Vector2(coordinates.Column * CellSize, -coordinates.Row * CellSize);
     }
 
-    public int GetNeighbours(Span<GridCoord> buffer, GridCoord coordinate)
+    public int GetNeighbours(Span<GridCoordinate> buffer, GridCoordinate coordinate)
     {
         var neighboursCount = 0;
         for (int col = -1; col <= 1; col++)
@@ -299,7 +305,7 @@ public struct NavigationGrid
             for (int row = -1; row <= 1; row++)
             {
                 if (row == 0 && col == 0) { continue; }
-                var cell = coordinate + new GridCoord(col, row);
+                var cell = coordinate + new GridCoordinate(col, row);
                 if (ContainsCell(cell))
                 {
                     buffer[neighboursCount++] = cell;
@@ -310,13 +316,13 @@ public struct NavigationGrid
         return neighboursCount;
     }
 
-    public bool ContainsCell(GridCoord coordinate)
+    public bool ContainsCell(GridCoordinate coordinate)
         => coordinate.Column >= 0 && 
            coordinate.Column < _unwalkablesCells.GetLength(0) &&
            coordinate.Row >= 0 && 
            coordinate.Row < _unwalkablesCells.GetLength(1); 
 
-    public int GetDistance(GridCoord a, GridCoord b)
+    public int GetDistance(GridCoordinate a, GridCoordinate b)
     {
         var dx = (int)MathF.Abs(b.Column - a.Column); 
         var dy = (int)MathF.Abs(b.Row - a.Row);
@@ -326,7 +332,7 @@ public struct NavigationGrid
             : dy * DiagonalDistance + ((dx - dy) * OrthogonalDistance);
     }
 
-    public bool HasLineOfSight(GridCoord start, GridCoord end, byte mask)
+    public bool HasLineOfSight(GridCoordinate start, GridCoordinate end, byte mask)
     {
         var x0 = start.Column;
         var y0 = start.Row;
@@ -361,18 +367,18 @@ public struct NavigationGrid
         }
     }
 
-    public GridCoord ToGridCoord(Idx<PathFindingNode> idx)
+    public GridCoordinate ToGridCoord(Idx<PathFindingNode> idx)
     {
         var rowCount = _nodes.GetLength(1);
-        return new GridCoord(idx.Value / rowCount, idx.Value % rowCount);
+        return new GridCoordinate(idx.Value / rowCount, idx.Value % rowCount);
     }
 
-    public Idx<PathFindingNode> ToIdx(GridCoord coordinates)
+    public Idx<PathFindingNode> ToIdx(GridCoordinate coordinates)
     {
         return (Idx<PathFindingNode>)(coordinates.Column * _nodes.GetLength(1) + coordinates.Row);
     }
 
-    public GridCoord FindNearestWalkableCell(GridCoord destination, byte mask)
+    public GridCoordinate FindNearestWalkableCell(GridCoordinate destination, byte mask)
     {
         var queueStart = 0;  
         var queueEnd = 0;  
@@ -390,7 +396,7 @@ public struct NavigationGrid
             var current = _nearestWalkableQueue[queueStart++];
             foreach(var (x, y) in directions)
             {
-                var neighbour = current + new GridCoord(x, y);
+                var neighbour = current + new GridCoordinate(x, y);
                 if (_nodes[neighbour.Column, neighbour.Row].State == PathFindingNode.NodeState.NearestWalkableVisited ||
                     neighbour.Column < 0 || neighbour.Column >= _unwalkablesCells.GetLength(0) ||
                     neighbour.Row < 0 || neighbour.Row >= _unwalkablesCells.GetLength(1))

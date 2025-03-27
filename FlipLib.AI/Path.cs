@@ -1,16 +1,21 @@
 using System.Numerics;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
-using System.ComponentModel.Design;
 
-namespace FES.AI;
+namespace FlipLib.AI;
+
+public struct WayPoint
+{
+    public Vector2 Position;
+    public Idx<WayPoint>? Next;
+}
 
 public struct Path
 {
-    public Idx<PathNode>? FirstIdx;
-    public Idx<PathNode>? LastIdx;
+    public Idx<WayPoint>? FirstIdx;
+    public Idx<WayPoint>? LastIdx;
 
-    public PathNode[] _nodes;
+    public WayPoint[] _nodes;
     public BitVector32 _availableSpaces;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -21,11 +26,11 @@ public struct Path
             throw new ArgumentOutOfRangeException(nameof(capacity), "capacity must be less than or equal to 32");
         }
 
-        _nodes = new PathNode[capacity];
+        _nodes = new WayPoint[capacity];
         _availableSpaces =  new(int.MaxValue);
     }
 
-    public ref PathNode this[Idx<PathNode> idx]
+    public ref WayPoint this[Idx<WayPoint> idx]
     {
         get 
         {
@@ -44,17 +49,17 @@ public struct Path
         => _availableSpaces.Data == int.MaxValue;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PathNode? GetFirst() 
+    public WayPoint? GetFirst() 
         => FirstIdx.HasValue ? _nodes[FirstIdx.Value.Value] : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PathNode? GetLast() 
+    public WayPoint? GetLast() 
         => LastIdx.HasValue ? _nodes[LastIdx.Value.Value] : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Idx<PathNode> Push(Vector2 position)
+    public Idx<WayPoint> Push(Vector2 position)
     {
-        var idx = Add(new PathNode { Position = position });
+        var idx = Add(new WayPoint { Position = position });
         if (!LastIdx.HasValue)
         {
             FirstIdx = LastIdx = idx;
@@ -85,9 +90,9 @@ public struct Path
         return idx;
     }
 
-    public Idx<PathNode> PushFront(Vector2 position)
+    public Idx<WayPoint> PushFront(Vector2 position)
     {
-        var idx = Add(new PathNode { Position = position});
+        var idx = Add(new WayPoint { Position = position});
         if (!FirstIdx.HasValue)
         {
             FirstIdx = LastIdx = idx; 
@@ -124,7 +129,7 @@ public struct Path
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Idx<PathNode> Add(PathNode node)
+    private Idx<WayPoint> Add(WayPoint node)
     {
         for (int i = 0; i < 32; i++)
         {
@@ -133,7 +138,7 @@ public struct Path
             {
                 _nodes[i] = node;
                 _availableSpaces[mask] = false;
-                return new Idx<PathNode>(i);
+                return new Idx<WayPoint>(i);
             }
         }
 
@@ -142,7 +147,7 @@ public struct Path
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Idx<PathNode> Add()
+    private Idx<WayPoint> Add()
     {
         for (int i = 0; i < 32; i++)
         {
@@ -150,16 +155,10 @@ public struct Path
             if (_availableSpaces[mask]) 
             {
                 _availableSpaces[mask] = false;
-                return new Idx<PathNode>(i);
+                return new Idx<WayPoint>(i);
             }
         }
 
         throw new OutOfMemoryException("There is no more room in path for additional nodes");
     }
-}
-
-public struct PathNode
-{
-    public Vector2 Position;
-    public Idx<PathNode>? Next;
 }

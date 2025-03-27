@@ -1,32 +1,16 @@
 using System.Numerics;
 
-namespace FES.Physics;
+namespace FlipLib.Physics;
 
 public static class Cast
 {
-    public static bool Collider2D(
-        ReadOnlySpan<Entity<Collider2D>> world,
-        Collider2D collider, 
-        Vector2 movement,
-        ref Collision collision, 
-        Idx<Collider2D>? self = null
-    )
+    public static bool Circle(ref readonly CastQuery<Circle> query, ref Collision collision)
     {
-        return collider.ShapeType switch 
-        {
-            CollisionShape.Circle => Circle(world, collider.Circle, movement, ref collision, self),
-            _ => throw new NotImplementedException()
-        };
-    }
+        var circle = query.Entity;
+        var self = query.Self;
+        var movement = query.Displacement;
+        var world = query.World;
 
-    public static bool Circle(
-        ReadOnlySpan<Entity<Collider2D>> world,
-        Circle circle, 
-        Vector2 movement,
-        ref Collision collision, 
-        Idx<Collider2D>? self = null
-    )
-    {
         var dir = Vector2.Normalize(movement);
         var perpendicular = new Vector2(dir.Y, dir.X);
 
@@ -41,9 +25,13 @@ public static class Cast
         var ls2Collision = new Collision();
         var endCircleCollision = new Collision();
 
-        var ls1Hit = Overlap.LineSegment(world, ls1, ref ls1Collision, self);
-        var ls2Hit = Overlap.LineSegment(world, ls2, ref ls2Collision, self);
-        var endCircleHit = Overlap.Circle(world, endCircle, ref endCircleCollision, self);
+        var l1Query = new OverlapQuery<LineSegment>(ls1, self, world);
+        var l2Query = new OverlapQuery<LineSegment>(ls2, self, world);
+        var circleQuery = new OverlapQuery<Circle>(endCircle, self, world);
+
+        var ls1Hit = Overlap.LineSegment(ref l1Query, ref ls1Collision);
+        var ls2Hit = Overlap.LineSegment(ref l2Query, ref ls2Collision);
+        var endCircleHit = Overlap.Circle(ref circleQuery, ref endCircleCollision);
 
         if (!ls1Hit && !ls2Hit && !endCircleHit) { return false; }
 

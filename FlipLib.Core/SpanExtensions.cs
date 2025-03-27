@@ -1,4 +1,4 @@
-namespace FES;
+namespace FlipLib;
 
 public static class SpanExtensions
 {
