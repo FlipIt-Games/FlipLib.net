@@ -3,7 +3,7 @@
 using FlipLib;
 using FlipLib.Physics;
 
-namespace FES.Physics.Tests;
+namespace FlipLib.Physics.Tests;
 
 [TestFixture]
 public class Physics2DTests

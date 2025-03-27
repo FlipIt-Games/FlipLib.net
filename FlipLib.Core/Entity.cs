@@ -1,12 +1,12 @@
 namespace FlipLib;
 
-public struct Entity<T> where T : unmanaged
+public struct Entity<T> where T : struct
 {
     public UId<T> Id;
     public T Item;
 }
 
-public readonly struct Idx<T> where T : unmanaged 
+public readonly struct Idx<T> where T : struct 
 {
     public readonly int Value;
 
@@ -25,7 +25,7 @@ public readonly struct Idx<T> where T : unmanaged
     public override int GetHashCode() => Value.GetHashCode();
 }
 
-public readonly struct UId<T> where T : unmanaged
+public readonly struct UId<T> where T : struct
 {
     public readonly int Value;
 

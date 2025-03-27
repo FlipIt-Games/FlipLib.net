@@ -8,7 +8,7 @@ namespace FlipLib;
 /// </summary>
 /// <typeparam name="TEntity"></typeparam>
 public struct Pool<TEntity> 
-    where TEntity : unmanaged 
+    where TEntity : struct 
 {
     private Entity<TEntity>[] datas;
     private int capacity;

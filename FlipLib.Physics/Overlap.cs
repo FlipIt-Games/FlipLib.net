@@ -8,7 +8,7 @@ public static partial class Overlap
     public static partial bool Circle(ref readonly OverlapQuery<Circle> query, ref Span<Collision> collisions);
     public static partial (Vector2?, Vector2?) Circle(Circle circle, LineSegment segment);
 
-    public static partial bool Cone(OverlapQuery<Cone> query, ref Span<Collision> collisions);
+    public static partial bool Cone(ref readonly OverlapQuery<Cone> query, ref Span<Collision> collisions);
 
     public static partial (Vector2?, Vector2?) Line(Line line, Rectangle rect);
     public static partial Vector2? Line(Line line, LineSegment segment);

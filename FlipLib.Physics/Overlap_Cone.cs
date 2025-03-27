@@ -6,8 +6,7 @@ namespace FlipLib.Physics;
 
 public static partial class Overlap
 {
-    // Returns the x nearest in the provided collision span of size x, ordered
-    public static partial bool Cone(OverlapQuery<Cone> query, ref Span<Collision> collisions)
+    public static partial bool Cone(ref readonly OverlapQuery<Cone> query, ref Span<Collision> collisions)
     {
         var cone = query.Entity;
         var self = query.Self;

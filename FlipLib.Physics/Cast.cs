@@ -25,9 +25,9 @@ public static class Cast
         var ls2Collision = new Collision();
         var endCircleCollision = new Collision();
 
-        var l1Query = new OverlapQuery<LineSegment>(ls1, self, world);
-        var l2Query = new OverlapQuery<LineSegment>(ls2, self, world);
-        var circleQuery = new OverlapQuery<Circle>(endCircle, self, world);
+        var l1Query = new OverlapQuery<LineSegment>(ls1, world, self);
+        var l2Query = new OverlapQuery<LineSegment>(ls2, world, self);
+        var circleQuery = new OverlapQuery<Circle>(endCircle, world, self);
 
         var ls1Hit = Overlap.LineSegment(ref l1Query, ref ls1Collision);
         var ls2Hit = Overlap.LineSegment(ref l2Query, ref ls2Collision);

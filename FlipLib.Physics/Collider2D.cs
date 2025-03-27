@@ -32,11 +32,11 @@ public readonly ref struct OverlapQuery<T> where T : unmanaged
     public readonly Idx<Collider2D>? Self;
     public readonly ReadOnlySpan<Entity<Collider2D>> World;
 
-    public OverlapQuery(T entity, Idx<Collider2D>? self, ReadOnlySpan<Entity<Collider2D>> world)
+    public OverlapQuery(T entity, ReadOnlySpan<Entity<Collider2D>> world, Idx<Collider2D>? self = null)
     {
         Entity = entity;
-        Self = self;
         World = world;
+        Self = self;
     }
 }
 
