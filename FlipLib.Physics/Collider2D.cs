@@ -7,23 +7,23 @@ public enum CollisionShape
 {
     Circle = 1,
     AABB = 2,
-    Cone = 4
+    Cone = 3
 }
 
-[StructLayout(LayoutKind.Explicit, Size = 40)]
+[StructLayout(LayoutKind.Explicit, Size = 32)]
 public struct Collider2D
 {
     [FieldOffset(0)]
-    public CollisionShape ShapeType;
-
-    [FieldOffset(8)]
     public Circle Circle; 
 
-    [FieldOffset(8)]
+    [FieldOffset(0)]
     public Rectangle AABB;
 
-    [FieldOffset(8)]
+    [FieldOffset(0)]
     public Cone Cone;
+
+    [FieldOffset(24)]
+    public CollisionShape ShapeType;
 }
 
 public readonly ref struct OverlapQuery<T> where T : unmanaged

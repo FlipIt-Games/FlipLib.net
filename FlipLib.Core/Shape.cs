@@ -93,7 +93,7 @@ public record struct Circle
     }
 }
 
-[StructLayout(LayoutKind.Explicit, Size = 32)]
+[StructLayout(LayoutKind.Explicit, Size = 24)]
 public struct Cone
 {
     [FieldOffset(0)]
