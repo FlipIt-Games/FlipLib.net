@@ -10,28 +10,34 @@ namespace FlipLib;
 public struct Pool<TEntity> 
     where TEntity : struct 
 {
-    private Entity<TEntity>[] datas;
-    private int capacity;
-    private int size;
+    public Memory<Entity<TEntity>> _datas;
+    public int _size;
 
     /// <summary>
     /// The max number of elements the pool can contain.
     /// </summary>
-    public int Capacity => capacity; 
+    public int Capacity => _datas.Length; 
 
     /// <summary>
     /// The current number of elements in the pool.
     /// </summary>
-    public int Size => size;
+    public int Size => _size;
 
     private int nextUId;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Pool(int capacity) 
+    public Pool(int capacity, IAllocator allocator = null) 
     {
-        size = 0;
-        datas = new Entity<TEntity>[capacity];
-        this.capacity = capacity;
+        _size = 0;
+
+        if (allocator is null)
+        {
+            _datas = new Entity<TEntity>[capacity];
+        }
+        else 
+        {
+            _datas = allocator.AllocZeroed<Entity<TEntity>>(capacity);
+        }
     }
 
     /// <summary>
@@ -49,15 +55,15 @@ public struct Pool<TEntity>
                 throw new IndexOutOfRangeException(nameof(idx));
             }
 #endif
-            return ref datas[(int)idx];
+            return ref _datas.Span[(int)idx];
         }
     }
 
     public TEntity? GetByUId(UId<TEntity> uid)
     {
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < _size; i++)
         {
-            ref var item = ref datas[i];
+            ref var item = ref _datas.Span[i];
             if (item.Id == uid) { return item.Item; }
         }
 
@@ -73,12 +79,12 @@ public struct Pool<TEntity>
     public ref Entity<TEntity> Add() 
     {
 #if DEBUG
-        if (size == capacity) 
+        if (_size == Capacity) 
         {
             throw new OutOfMemoryException();
         }
 #endif
-        ref var data = ref datas[size++];
+        ref var data = ref _datas.Span[_size++];
         data.Id = new UId<TEntity>(nextUId++);
         return ref data;
     }
@@ -92,19 +98,19 @@ public struct Pool<TEntity>
     public ref Entity<TEntity> Add(TEntity item) 
     {
 #if DEBUG
-        if (size == capacity) 
+        if (_size == Capacity) 
         {
             throw new OutOfMemoryException();
         }
 #endif
 
-        datas[size++] = new Entity<TEntity> 
+        _datas.Span[_size++] = new Entity<TEntity> 
         { 
             Id = new UId<TEntity>(nextUId++),
             Item = item 
         };
 
-        return ref datas[size -1];
+        return ref _datas.Span[_size -1];
     }
 
     /// <summary>
@@ -122,11 +128,11 @@ public struct Pool<TEntity>
             throw new IndexOutOfRangeException(nameof(id));
         }
 #endif
-        var data = datas[(int)id];
-        var swapWith = datas[--size];
+        var data = _datas.Span[(int)id];
+        var swapWith = _datas.Span[--_size];
 
-        datas[size] = data;
-        datas[(int)id] = swapWith;
+        _datas.Span[_size] = data;
+        _datas.Span[(int)id] = swapWith;
     }
 
     /// <summary>
@@ -135,7 +141,7 @@ public struct Pool<TEntity>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Clear() 
     {
-        size = 0;
+        _size = 0;
     }
 
     /// <summary>
@@ -144,6 +150,6 @@ public struct Pool<TEntity>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<Entity<TEntity>> AsSpan()
     {
-        return new Span<Entity<TEntity>>(datas, 0, size);
+        return _datas.Span.Slice(0, _size);
     }
 }

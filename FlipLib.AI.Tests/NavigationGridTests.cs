@@ -48,7 +48,7 @@ public class NavigationGridTests
     }
 
     [Test]
-    public void Bite()
+    public void SetUnwalkable_Should_SetCorrectCells()
     {
         var grid = new NavigationGrid(0.5f, 10, 10);
         int[,] expectedGrid =
@@ -84,7 +84,7 @@ public class NavigationGridTests
             for (int row = 0; row < 10; row++)
             {
                 var expected = expectedGrid[col, row];
-                Assert.That(grid._unwalkablesCells[col, row], Is.EqualTo(expected), $"expected grid at {col}, {row} to be {expected}");
+                Assert.That(grid[col, row], Is.EqualTo(expected), $"expected grid at {col}, {row} to be {expected}");
             }
         }
     }

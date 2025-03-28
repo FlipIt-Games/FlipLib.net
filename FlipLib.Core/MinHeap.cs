@@ -8,23 +8,25 @@ public struct MinHeapNode<T> where T : struct
 
 public struct MinHeap<T> where T : struct
 {
-    public readonly int Capacity;
     public int Size;
 
-    public MinHeapNode<T>[] _data;
+    public Memory<MinHeapNode<T>> _data;
 
-    public MinHeap(int capacity)
+    public MinHeap(int capacity, IAllocator allocator = null)
     {
-        Capacity = capacity;
         Size = 0;
 
-        _data = new MinHeapNode<T>[capacity];
+        _data = allocator is null 
+            ? new MinHeapNode<T>[capacity]
+            : allocator.AllocZeroed<MinHeapNode<T>>(capacity);
     }
+
+    public int Capacity => _data.Length;
 
     public MinHeapNode<T> this[Idx<MinHeapNode<T>> idx] 
     {
-        get => _data[idx.Value];
-        set => _data[idx.Value] = value;
+        get => _data.Span[idx.Value];
+        set => _data.Span[idx.Value] = value;
     }
 
     public Idx<MinHeapNode<T>> GetLeftChildIdx(Idx<MinHeapNode<T>> idx)
@@ -57,7 +59,7 @@ public struct MinHeap<T> where T : struct
         int i = 0;
         while(i < Size)
         {
-            if (_data[i].DataIdx == dataIdx) 
+            if (_data.Span[i].DataIdx == dataIdx) 
             {
                 break;
             }
@@ -76,8 +78,8 @@ public struct MinHeap<T> where T : struct
 
     public Idx<T> RemoveFirst()
     {
-        var first = _data[0];
-        _data[0] = _data[--Size];
+        var first = _data.Span[0];
+        _data.Span[0] = _data.Span[--Size];
         BubbleDown((Idx<MinHeapNode<T>>)0);
         return first.DataIdx;
     }
@@ -86,7 +88,7 @@ public struct MinHeap<T> where T : struct
     {
         for (int i = 0; i < Size; i++)
         {
-            _data[i] = new();
+            _data.Span[i] = new();
         }
         Size = 0;
     }

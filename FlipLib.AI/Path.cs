@@ -15,19 +15,21 @@ public struct Path
     public Idx<WayPoint>? FirstIdx;
     public Idx<WayPoint>? LastIdx;
 
-    public WayPoint[] _nodes;
+    public Memory<WayPoint> _nodes;
     public BitVector32 _availableSpaces;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Path(int capacity)
+    public Path(int size, IAllocator allocator = null)
     {
-        if (capacity > 32)
+        if (size > 32)
         {
-            throw new ArgumentOutOfRangeException(nameof(capacity), "capacity must be less than or equal to 32");
+            throw new ArgumentOutOfRangeException(nameof(size), "memory capacity must be less than or equal to 32");
         }
 
-        _nodes = new WayPoint[capacity];
         _availableSpaces =  new(int.MaxValue);
+        _nodes = allocator is null
+            ? new WayPoint[size]
+            : allocator.AllocZeroed<WayPoint>(size);
     }
 
     public ref WayPoint this[Idx<WayPoint> idx]
@@ -40,7 +42,7 @@ public struct Path
                 throw new ArgumentException($"node at {idx.Value} is empty");
             }
 #endif
-            return ref _nodes[idx.Value];
+            return ref _nodes.Span[idx.Value];
         }
     }
 
@@ -50,11 +52,11 @@ public struct Path
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public WayPoint? GetFirst() 
-        => FirstIdx.HasValue ? _nodes[FirstIdx.Value.Value] : null;
+        => FirstIdx.HasValue ? _nodes.Span[FirstIdx.Value.Value] : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public WayPoint? GetLast() 
-        => LastIdx.HasValue ? _nodes[LastIdx.Value.Value] : null;
+        => LastIdx.HasValue ? _nodes.Span[LastIdx.Value.Value] : null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Idx<WayPoint> Push(Vector2 position)
@@ -136,7 +138,7 @@ public struct Path
             var mask = 1 << i;
             if (_availableSpaces[mask]) 
             {
-                _nodes[i] = node;
+                _nodes.Span[i] = node;
                 _availableSpaces[mask] = false;
                 return new Idx<WayPoint>(i);
             }
