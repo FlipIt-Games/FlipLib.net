@@ -32,7 +32,7 @@ public struct LazyThetaPathFinder
     public Memory<LazyThetaNode> _nodes;
     public MinHeap<LazyThetaNode> _openList;
 
-    public LazyThetaPathFinder(NavigationGrid grid, IAllocator allocator)
+    public LazyThetaPathFinder(NavigationGrid grid, IAllocator allocator = null)
     {
         _grid = grid;
         var gridSize = grid.ColumnCount * grid.RowCount;
@@ -90,11 +90,11 @@ public struct LazyThetaPathFinder
             // If we reached the destination we can build the path by walking parents
             if (currentIdx.Value == endIdx) 
             {
-                while(currentCell != startCell)
+                while(currentIdx.Value != startIdx)
                 {
-                    path.PushFront(_grid.ToWorldPosition(currentCell));
+                    path.PushFront(_grid.ToWorldPosition(ToGridCoord(currentIdx)));
 
-                    currentCell = ToGridCoord(current.ParentIdx);
+                    currentIdx = current.ParentIdx;
                     current = nodes[currentIdx.Value];
                 }
                 return;
@@ -144,7 +144,7 @@ public struct LazyThetaPathFinder
                 neighbour.ParentIdx = currentIdx;
 
                 var idx = ToIdx(neighbourCell);
-                if (neighbour.State == LazyThetaNode.NodeState.Open)
+                if (neighbour.Generation == _generation && neighbour.State == LazyThetaNode.NodeState.Open)
                 {
                     _openList.Update(idx, neighbour.FValue);
                 }
