@@ -32,10 +32,10 @@ public struct LazyThetaPathFinder
     public Memory<LazyThetaNode> _nodes;
     public MinHeap<LazyThetaNode> _openList;
 
-    public LazyThetaPathFinder(NavigationGrid grid, IAllocator allocator = null)
+    public LazyThetaPathFinder(float cellSize, int columns, int rows, IAllocator allocator = null)
     {
-        _grid = grid;
-        var gridSize = grid.ColumnCount * grid.RowCount;
+        _grid = new NavigationGrid(cellSize, columns, rows, allocator);
+        var gridSize = _grid.ColumnCount * _grid.RowCount;
         
         _nodes = allocator is null
             ? new LazyThetaNode[gridSize]
@@ -94,7 +94,8 @@ public struct LazyThetaPathFinder
                 {
                     path.PushFront(_grid.ToWorldPosition(ToGridCoord(currentIdx)));
 
-                    currentIdx = current.ParentIdx;
+                    currentCell = ToGridCoord(current.ParentIdx);
+                    currentIdx = ToIdx(currentCell); 
                     current = nodes[currentIdx.Value];
                 }
                 return;
@@ -104,11 +105,10 @@ public struct LazyThetaPathFinder
             // instead of grid constrained path
             if (currentCell != startCell && current.ParentIdx != startNodeIdx)
             {
-                var parentCell = ToGridCoord(current.ParentIdx);
                 var parent = nodes[current.ParentIdx.Value];
                 var grandParentCell = ToGridCoord(parent.ParentIdx);
 
-                if (_grid.HasLineOfSight(parentCell, grandParentCell, mask))
+                if (_grid.HasLineOfSight(currentCell, grandParentCell, mask))
                 {
                     var grandParent = nodes[parent.ParentIdx.Value];
                     current.ParentIdx = parent.ParentIdx;

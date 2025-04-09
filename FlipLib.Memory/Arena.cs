@@ -3,7 +3,7 @@ namespace FlipLib.Memory;
 using System;
 using System.Runtime.CompilerServices;
 
-public sealed class Arena
+public sealed class Arena : IAllocator
 {
     public byte[] _buffer;
     public int _offset;
@@ -30,7 +30,7 @@ public sealed class Arena
         return new Memory<T>(Unsafe.As<byte[], T[]>(ref _buffer), alignedOffset / alignment, count);
     }
 
-    public void Free()
+    public void FreeAll()
     {
         _offset = 0;
     }
