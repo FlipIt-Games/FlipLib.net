@@ -32,10 +32,10 @@ public struct LazyThetaPathFinder
     public Memory<LazyThetaNode> _nodes;
     public MinHeap<LazyThetaNode> _openList;
 
-    public LazyThetaPathFinder(NavigationGrid grid, IAllocator allocator)
+    public LazyThetaPathFinder(float cellSize, int columns, int rows, IAllocator allocator = null)
     {
-        _grid = grid;
-        var gridSize = grid.ColumnCount * grid.RowCount;
+        _grid = new NavigationGrid(cellSize, columns, rows, allocator);
+        var gridSize = _grid.ColumnCount * _grid.RowCount;
         
         _nodes = allocator is null
             ? new LazyThetaNode[gridSize]
