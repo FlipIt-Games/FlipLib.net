@@ -104,6 +104,7 @@ public struct MinHeap<T> where T : struct
             this[parentIdx] = tmp;
 
             currentIdx = GetParentIdx(currentIdx);
+            parentIdx = GetParentIdx(currentIdx);
         }
     }
 

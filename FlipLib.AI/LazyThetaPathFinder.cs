@@ -95,6 +95,7 @@ public struct LazyThetaPathFinder
                     path.PushFront(_grid.ToWorldPosition(currentCell));
 
                     currentCell = ToGridCoord(current.ParentIdx);
+                    currentIdx = ToIdx(currentCell); 
                     current = nodes[currentIdx.Value];
                 }
                 return;
@@ -104,11 +105,10 @@ public struct LazyThetaPathFinder
             // instead of grid constrained path
             if (currentCell != startCell && current.ParentIdx != startNodeIdx)
             {
-                var parentCell = ToGridCoord(current.ParentIdx);
                 var parent = nodes[current.ParentIdx.Value];
                 var grandParentCell = ToGridCoord(parent.ParentIdx);
 
-                if (_grid.HasLineOfSight(parentCell, grandParentCell, mask))
+                if (_grid.HasLineOfSight(currentCell, grandParentCell, mask))
                 {
                     var grandParent = nodes[parent.ParentIdx.Value];
                     current.ParentIdx = parent.ParentIdx;
@@ -144,7 +144,7 @@ public struct LazyThetaPathFinder
                 neighbour.ParentIdx = currentIdx;
 
                 var idx = ToIdx(neighbourCell);
-                if (neighbour.State == LazyThetaNode.NodeState.Open)
+                if (neighbour.Generation == _generation && neighbour.State == LazyThetaNode.NodeState.Open)
                 {
                     _openList.Update(idx, neighbour.FValue);
                 }
